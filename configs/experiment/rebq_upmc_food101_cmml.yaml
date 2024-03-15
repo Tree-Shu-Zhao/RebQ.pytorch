@@ -1,0 +1,9 @@
+# @package _global_
+defaults:
+  - override /data: upmc_food101_cmml
+  - override /model: rebq
+  - override /train: default
+  - override /test: default
+
+EXP_NOTE: rebq
+OUTPUT_DIR: checkpoints/${EXP_NOTE}

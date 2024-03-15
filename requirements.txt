@@ -1,0 +1,7 @@
+hydra-core
+loguru
+pyrootutils
+transformers==4.34.0
+torchmetrics
+nni
+tensorboard

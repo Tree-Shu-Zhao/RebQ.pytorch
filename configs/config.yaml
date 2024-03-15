@@ -1,0 +1,18 @@
+# @package _global_
+defaults:
+  - _self_
+  - data: null
+  - model: null
+  - train: null
+  - test: null
+  - experiment: null
+
+DATA_DIR: data
+OUTPUT_DIR: checkpoints/${now:%Y-%m-%d}/${now:%H-%M-%S}
+GPU: 0
+EXP_NOTE: null
+SEED: 42
+
+hydra:
+  run:
+    dir: ${OUTPUT_DIR}

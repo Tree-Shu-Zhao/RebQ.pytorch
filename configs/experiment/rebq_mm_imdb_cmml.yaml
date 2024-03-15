@@ -1,0 +1,14 @@
+# @package _global_
+defaults:
+  - override /data: mm_imdb_cmml
+  - override /model: rebq
+  - override /train: default
+  - override /test: default
+
+EXP_NOTE: rebq
+OUTPUT_DIR: checkpoints/${EXP_NOTE}
+train:
+  criterion:
+    NAME: BCE
+test:
+  NAME: F1-Macro

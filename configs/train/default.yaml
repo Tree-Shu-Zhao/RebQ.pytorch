@@ -1,0 +1,30 @@
+EPOCHS: 10
+BATCH_SIZE: 4
+CHECKPOINT: null
+CHECKPOINT_TASK_ID: null
+PRINT_FREQ: 100
+EVAL_FREQ: 1
+GPU: 0
+SEED: 42
+NUM_TASKS: ${data.NUM_TASKS}
+HPARAMS_SEARCHING: False
+FREEZE_LOGITS: True
+THROUGHOUT: False
+
+optimizer:
+  NAME: AdamW
+  LEARNING_RATE: 1e-4
+  BETAS:
+    - 0.9
+    - 0.98
+  EPS: 1e-8
+
+lr_scheduler:
+  NAME: warmup_cosine
+  LR_SCHEDULER_INTERVAL: step
+  NUM_WARMUP_STEPS: 0.1
+
+criterion:
+  NAME: CE
+
+ONLY_VAL: null # for debug
