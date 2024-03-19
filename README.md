@@ -3,8 +3,11 @@
 This repository contains the code release of RebQ, from our paper: 
 
 [**Reconstruct before Query: Continual Missing Modality Learning with Decomposed Prompt Collaboration**](https://arxiv.org/pdf/2403.11373.pdf)
+
 Shu Zhao, Xiaohan Zou, Tan Yu, Huijuan Xu.
+
 Pennsylvania State University, NVIDIA
+
 arXiv:2403.11373, 2024.
 
 If this code and/or paper is useful in your research, please cite:
