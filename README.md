@@ -1,5 +1,26 @@
 # Reconstruct before Query: Continual Missing Modality Learning with Decomposed Prompt Collaboration
 
+This repository contains the code release of RebQ, from our paper: 
+
+[**Reconstruct before Query: Continual Missing Modality Learning with Decomposed Prompt Collaboration**](https://arxiv.org/pdf/2403.11373.pdf)
+Shu Zhao, Xiaohan Zou, Tan Yu, Huijuan Xu.
+Pennsylvania State University, NVIDIA
+arXiv:2403.11373, 2024.
+
+If this code and/or paper is useful in your research, please cite:
+
+```bibtex
+@article{zhao2024rebq,
+  title={Reconstruct before Query: Continual Missing Modality Learning with Decomposed Prompt Collaboration},
+  author={Shu Zhao and
+          Xiaohan Zou and
+          Tan Yu and
+          Huijuan Xu},
+  journal={arXiv preprint arXiv:2403.11373},
+  year={2024}
+}
+```
+
 ## Installing Dependencies
 
 We tested our code on Ubuntu 22.04 with PyTorch 1.13. You can use `environment.yml` and `requirements.txt` to install dependencies.
