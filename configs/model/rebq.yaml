@@ -1,0 +1,57 @@
+NAME: rebq
+TOTAL_LABELS: ${data.TOTAL_LABELS}
+NUM_TASKS: ${data.NUM_TASKS}
+NUM_LABELS_PER_TASK: ${data.NUM_LABELS_PER_TASK}
+MAX_LENGTH: ${data.MAX_LENGTH}
+HIDDEN_SIZE: 768
+POOLER: False
+MLP_CLASSIFIER: False
+
+position_embedding:
+  DEFAULT_LENGTH: 40
+  HIDDEN_SIZE: 768
+
+prompt:
+  NAME: CODA
+  HIDDEN_SIZE: ${model.HIDDEN_SIZE}
+  NUM_TASKS: ${data.NUM_TASKS}
+  POOL_SIZE: 128
+  SHARED: False
+  SHARED_QUERY: False
+  REINIT: False
+  ALPHA: 0.01
+  RECONSTRUCT_TOKEN: input
+  RECONSTRUCT_STAGE: True
+  SINGLE_POOL: False
+  EMPTY_REC: False
+  memory:
+    NAME: ${model.prompt.NAME}
+    KEY_HIDDEN_SIZE: 768
+    HIDDEN_SIZE: ${model.prompt.HIDDEN_SIZE}
+    NUM_TASKS: ${model.prompt.NUM_TASKS}
+    POOL_SIZE: ${model.prompt.POOL_SIZE}
+    REINIT: ${model.prompt.REINIT}
+    LAYERS: 8
+    LENGTH: 8
+    POSITION: input
+    QUERY_POS: all
+  image:
+    NAME: ${model.prompt.NAME}
+    KEY_HIDDEN_SIZE: 768
+    HIDDEN_SIZE: ${model.prompt.HIDDEN_SIZE}
+    NUM_TASKS: ${model.prompt.NUM_TASKS}
+    POOL_SIZE: ${model.prompt.POOL_SIZE}
+    REINIT: ${model.prompt.REINIT}
+    LAYERS: 8
+    LENGTH: 8
+    POSITION: attention
+  text:
+    NAME: ${model.prompt.NAME}
+    KEY_HIDDEN_SIZE: 768
+    HIDDEN_SIZE: ${model.prompt.HIDDEN_SIZE}
+    NUM_TASKS: ${model.prompt.NUM_TASKS}
+    POOL_SIZE: ${model.prompt.POOL_SIZE}
+    REINIT: ${model.prompt.REINIT}
+    LAYERS: 8
+    LENGTH: 8
+    POSITION: attention
