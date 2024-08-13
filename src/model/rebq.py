@@ -5,6 +5,7 @@ import torch.nn as nn
 from loguru import logger
 from PIL import Image
 from transformers import ViltProcessor
+from .l2p import L2P
 
 Image.MAX_IMAGE_PIXELS = 1000000000
 
@@ -51,15 +52,11 @@ class RebQ(nn.Module):
             self.vilt_model.embeddings.text_embeddings.position_embeddings.weight = nn.Parameter(pos_embs)
 
         # Setup prompts
-        self.memory_prompt_generator = PromptPool(cfg.prompt.memory)
-        self.memory_prompt_position = cfg.prompt.memory.POSITION
-        self.memory_prompt_layers = cfg.prompt.memory.LAYERS
-
-        self.image_prompt_generator = PromptPool(cfg.prompt.image)
+        self.image_prompt_generator = L2P()
         self.image_prompt_position = cfg.prompt.image.POSITION
         self.image_prompt_layers = cfg.prompt.image.LAYERS
 
-        self.text_prompt_generator = PromptPool(cfg.prompt.text)
+        self.text_prompt_generator = L2P()
         self.text_prompt_position = cfg.prompt.text.POSITION
         self.text_prompt_layers = cfg.prompt.text.LAYERS
 
@@ -86,56 +83,56 @@ class RebQ(nn.Module):
         inputs = batch["inputs"].to(self.vilt_model.device)
         with torch.no_grad():
             queries = self.vilt_model(**inputs).last_hidden_state
-        memory_prompts = []
-        for i in range(self.memory_prompt_layers):
-            layer_prompts = []
-            for idx in range(original_batch_size+num_aug):
-                if batch["missing_types"][idx] == 0:
-                    t_mem_prompts = self.memory_prompt_generator(queries[idx, 0, :].unsqueeze(0), i)
-                    i_mem_prompts = self.memory_prompt_generator(queries[idx, inputs.input_ids.size()[-1], :].unsqueeze(0), i)
-                    mem_prompts = t_mem_prompts + i_mem_prompts
-                elif batch["missing_types"][idx] == 1 or batch["missing_types"][idx] == 3:
-                    mem_prompts = self.memory_prompt_generator(queries[idx, inputs.input_ids.size()[-1], :].unsqueeze(0), i)
-                elif batch["missing_types"][idx] == 2 or batch["missing_types"][idx] == 4:
-                    mem_prompts = self.memory_prompt_generator(queries[idx, 0, :].unsqueeze(0), i)
-                layer_prompts.append(mem_prompts)
-            layer_prompts = torch.vstack(layer_prompts)
-            memory_prompts.append(layer_prompts)
+        # memory_prompts = []
+        # for i in range(self.memory_prompt_layers):
+        #     layer_prompts = []
+        #     for idx in range(original_batch_size+num_aug):
+        #         if batch["missing_types"][idx] == 0:
+        #             t_mem_prompts = self.memory_prompt_generator(queries[idx, 0, :].unsqueeze(0), i)
+        #             i_mem_prompts = self.memory_prompt_generator(queries[idx, inputs.input_ids.size()[-1], :].unsqueeze(0), i)
+        #             mem_prompts = t_mem_prompts + i_mem_prompts
+        #         elif batch["missing_types"][idx] == 1 or batch["missing_types"][idx] == 3:
+        #             mem_prompts = self.memory_prompt_generator(queries[idx, inputs.input_ids.size()[-1], :].unsqueeze(0), i)
+        #         elif batch["missing_types"][idx] == 2 or batch["missing_types"][idx] == 4:
+        #             mem_prompts = self.memory_prompt_generator(queries[idx, 0, :].unsqueeze(0), i)
+        #         layer_prompts.append(mem_prompts)
+        #     layer_prompts = torch.vstack(layer_prompts)
+        #     memory_prompts.append(layer_prompts)
         
         # Step3: Reconstruction
-        outputs = self.vilt_model(
-            **inputs, 
-            memory=memory_prompts,
-            memory_prompt_position=self.memory_prompt_position,
-            memory_prompt_layers=self.memory_prompt_layers,
-        ).last_hidden_state
+        # outputs = self.vilt_model(
+        #     **inputs, 
+        #     memory=memory_prompts,
+        #     memory_prompt_position=self.memory_prompt_position,
+        #     memory_prompt_layers=self.memory_prompt_layers,
+        # ).last_hidden_state
 
         # Remove memory prompts
-        memory_tokens = outputs[:, 1:1+self.cfg.prompt.memory.LENGTH, :].mean(dim=1)
-        outputs = torch.cat((
-            outputs[:, :1, :],
-            outputs[:, 1+self.cfg.prompt.memory.LENGTH:, :],
-        ), dim=1,
-        )
+        # memory_tokens = outputs[:, 1:1+self.cfg.prompt.memory.LENGTH, :].mean(dim=1)
+        # outputs = torch.cat((
+        #     outputs[:, :1, :],
+        #     outputs[:, 1+self.cfg.prompt.memory.LENGTH:, :],
+        # ), dim=1,
+        # )
 
         # Split outputs into original and augmented
-        original_outputs = outputs[:original_batch_size, :, :]
-        augmented_outputs = outputs[original_batch_size:, :, :]
+        # original_outputs = outputs[:original_batch_size, :, :]
+        # augmented_outputs = outputs[original_batch_size:, :, :]
 
-        reconstruction_loss = torch.tensor(0.).to(outputs.device)
-        reconstruction_cnt = 0
-        for idx in range(num_aug):
-            if batch["missing_types"][idx+original_batch_size] == 3:
-                reconstruction_loss += ((augmented_outputs[idx, 0, :] - original_outputs[batch["rec_gts"][idx], 0, :].detach())**2).mean()
-                reconstruction_cnt += 1
-            elif batch["missing_types"][idx+original_batch_size] == 4:
-                reconstruction_loss += ((augmented_outputs[idx, inputs.input_ids.size()[-1], :] - original_outputs[batch["rec_gts"][idx], inputs.input_ids.size()[-1], :].detach())**2).mean()
-                reconstruction_cnt += 1
+        # reconstruction_loss = torch.tensor(0.).to(outputs.device)
+        # reconstruction_cnt = 0
+        # for idx in range(num_aug):
+        #     if batch["missing_types"][idx+original_batch_size] == 3:
+        #         reconstruction_loss += ((augmented_outputs[idx, 0, :] - original_outputs[batch["rec_gts"][idx], 0, :].detach())**2).mean()
+        #         reconstruction_cnt += 1
+        #     elif batch["missing_types"][idx+original_batch_size] == 4:
+        #         reconstruction_loss += ((augmented_outputs[idx, inputs.input_ids.size()[-1], :] - original_outputs[batch["rec_gts"][idx], inputs.input_ids.size()[-1], :].detach())**2).mean()
+        #         reconstruction_cnt += 1
 
-        if reconstruction_cnt > 0:
-            reconstruction_loss /= reconstruction_cnt
-        else:
-            reconstruction_loss = None
+        # if reconstruction_cnt > 0:
+        #     reconstruction_loss /= reconstruction_cnt
+        # else:
+        reconstruction_loss = None
         
         # Step4: Retrieve vision and language components
         text_queries = []
@@ -145,18 +142,34 @@ class RebQ(nn.Module):
                 text_queries.append(queries[idx, 0, :])
                 image_queries.append(queries[idx, inputs.input_ids.size()[-1], :])
             elif batch["missing_types"][idx] == 1:
-                text_queries.append(original_outputs[idx, 0, :])
+                dummy_query = torch.zeros(768).to(queries.device)
+                dummy_query.requires_grad = False
+                text_queries.append(dummy_query)
                 image_queries.append(queries[idx, inputs.input_ids.size()[-1], :])
             elif batch["missing_types"][idx] == 2:
+                dummy_query = torch.zeros(768).to(queries.device)
+                dummy_query.requires_grad = False
                 text_queries.append(queries[idx, 0, :])
-                image_queries.append(original_outputs[idx, inputs.input_ids.size()[-1], :])
+                image_queries.append(dummy_query)
             else:
                 raise ValueError(f"Cannot find self.cfg.prompt.RECONSTRUCT_TOKEN: {self.cfg.prompt.RECONSTRUCT_TOKEN}.")
         text_queries = torch.vstack(text_queries)
         image_queries = torch.vstack(image_queries)
 
-        language_prompts = [self.text_prompt_generator(text_queries, i) for i in range(self.text_prompt_layers)]
-        vision_prompts = [self.image_prompt_generator(image_queries, i) for i in range(self.image_prompt_layers)]
+        # language_prompts = [self.text_prompt_generator(text_queries) for i in range(self.text_prompt_layers)]
+        # vision_prompts = [self.image_prompt_generator(image_queries) for i in range(self.image_prompt_layers)]
+        l_prompts = self.text_prompt_generator(text_queries)["prompted_embedding"]
+        bs = l_prompts.shape[0]
+        l_prompts = l_prompts.reshape(bs, 8, 8, 768)
+        language_prompts = []
+        for i in range(8):
+            language_prompts.append([l_prompts[:, i, :4, :], l_prompts[:, i, 4:, :]])
+
+        v_prompts = self.image_prompt_generator(image_queries)["prompted_embedding"]
+        v_prompts = v_prompts.reshape(bs, 8, 8, 768)
+        vision_prompts = []
+        for i in range(8):
+            vision_prompts.append([v_prompts[:, i, :4, :], v_prompts[:, i, 4:, :]])
         
         # Step5: Downstream tasks
         # Split inputs
@@ -164,7 +177,6 @@ class RebQ(nn.Module):
 
         outputs = self.vilt_model(
             **original_inputs, 
-            #**inputs, 
             vision_prompts=vision_prompts,
             vision_prompt_position=self.image_prompt_position,
             vision_prompt_layers=self.image_prompt_layers, 
@@ -190,9 +202,6 @@ class RebQ(nn.Module):
     def process_task_count(self, task_id):
         self.text_prompt_generator.process_task_count(task_id)
         self.image_prompt_generator.process_task_count(task_id)
-        self.memory_prompt_generator.process_task_count(task_id)
-
-
 
 class PromptPool(nn.Module):
     def __init__(self, cfg):
